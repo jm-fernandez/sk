@@ -16,6 +16,9 @@ Se generará un fichero sk.exe. Este fichero, juto con la carpeta assets es lo u
 wmake clean
 ``` 
 
+En caso de no querer compilar el juego, se puede descargar el juego junto con todos los ficheros necearios en formato zip en la lista de releases. La ultima release es https://github.com/jm-fernandez/sk/releases/tag/0.1
+
+
 ## Como jugar
 El programa ha sido testeado en DOSBox-X, usando la configuracion por defecto, y llevando a cabo los siguientes ajustes:
    - Ajustar el tipo de CPU a "486 with prefetch"

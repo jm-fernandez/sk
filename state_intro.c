@@ -108,7 +108,7 @@ bool intro_step(struct state_t_* state)
       }
       else
       {
-        state_ctrl_set(game_state_fight);
+        state_ctrl_set(game_state_story);
       }
     }
   }

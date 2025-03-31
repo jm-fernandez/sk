@@ -1,0 +1,72 @@
+#
+# Makefile
+#
+
+CFLAGS = -d2 -4r -bt=dos
+LIB_TOOL = wlib
+LNK_TOOL = wlink
+CC_TOOL = wcc386
+
+BINARY_NAME = sk.exe
+
+OBJECT_FILES = sk.obj                           &
+               timer.obj      		            &
+               mpu401.obj              	     	&
+               mem.obj                 		    &
+               midi.obj                		    &
+               audio.obj               		    &
+               aufile.obj              		    &
+               auwav.obj               		    &
+               dma.obj                 	 	    &
+               au_sb.obj              	 	    &
+               dpmi.obj                		    &
+               svga.obj                		    &
+               keyboard.obj                     &
+               keyconfig.obj                    &
+               zoom_effect.obj      		    &
+			   fade_to_color_effect.obj         &
+			   palette_transition_effect.obj    &
+               wait_effect.obj                  &
+               write_effect.obj                 &
+               font.obj                         &
+               bmp_sprite.obj                   &
+               solid_sprite.obj                 &
+               show_image_effect.obj            &
+               set_palette_effect.obj           &
+			   serialize_effect.obj             &
+               set_background_effect.obj        &
+               state_ctrl.obj                   &
+               state_intro.obj                  &
+               state_story.obj                  &
+               state_pause.obj                  &
+               state_fight.obj                  &
+               render.obj                       &
+               play_midi.obj                    &
+               play_wav.obj                     &
+               player.obj                       &
+               player_standing.obj              &
+               player_defense.obj               &
+               player_punch.obj                 &
+               player_kick.obj                  &
+               player_walk.obj                  &
+               player_jump.obj                  &
+               player_down.obj                  &
+               player_uppercout.obj             &
+               player_hit.obj                   &
+               player_ko.obj                    &
+               player_win.obj                   &
+               digits.obj                       &
+               ai.obj                           &
+               log.obj
+
+all: $(BINARY_NAME)
+
+$(BINARY_NAME): $(OBJECT_FILES)
+	$(LNK_TOOL) system dos32a debug all file {$(OBJECT_FILES)} name $(BINARY_NAME)
+
+.c.obj:
+	$(CC_TOOL) $(CFLAGS) $(FEATURESLT) $<
+
+clean: .symbolic
+	del *.obj
+	del $(BINARY_NAME)

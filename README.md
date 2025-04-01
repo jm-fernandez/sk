@@ -1,23 +1,10 @@
-# sk
-School Kombat: A MS-DOS videogame for the msdos.club game context
 
-![alt text](https://raw.githubusercontent.com/jm-fernandez/sk/refs/heads/main/assets/intro/sk_logo.bmp)
+<p align="center" width="100%">
+    <img src="https://raw.githubusercontent.com/jm-fernandez/sk/refs/heads/main/assets/intro/sk_logo.bmp"> 
+</p>
 
-## Como compilar
-El codigo fuente se compila uando compilacion cruzada con OpenWatcom. Se proporciona un fichero makefile para la utilidad wmake proporcionada justo con Openwatcom. Para generar el fichero ejecutable solo es necesario ejecutar el siguiente comando:
 
-```
-wmake
-``` 
-
-Se generará un fichero sk.exe. Este fichero, juto con la carpeta assets es lo unico que es necesario para poder ejecutar el juego. El fichero makefile tambien proporciona una opcion para eliminar los ficheros generadores durante la compilacion:
-
-```
-wmake clean
-``` 
-
-En caso de no querer compilar el juego, se puede descargar el juego junto con todos los ficheros necearios en formato zip en la lista de releases. La ultima release es https://github.com/jm-fernandez/sk/releases/tag/0.2
-
+Monika esta en medio de unas vacaciones de ensueño en Hawai, disfrutando de cócteles en la playa y sintiendo el cálido sol en su piel, cuando de repente una voz la interrumpe. ¡Qué decepción! Era solo un sueño. Esa voz pertenecía a su madre, apurándola para que no llegara tarde al insti. En realidad, Monika se encuentra en su habitación. Gijón, Junio de 1995. Es el último día de clase, y solo le queda recoger sus notas antes de empezar el tan esperado verano. Sin embargo, al llegar al insti, su mundo se desmorona: Las ha suspendido todas. Pero Monika no va a resignarse y pasar el verano encerrada estudiando. Monika se propone convencer a cada uno de sus profesores de que merece ser aprobada. Y los va a convencer por las buenas... o por las malas!
 
 ## Como jugar
 El programa ha sido testeado en DOSBox-X, usando la configuracion por defecto, y llevando a cabo los siguientes ajustes:
@@ -36,6 +23,22 @@ Las teclas para jugar son las siguientes
    - P: Pausa
    - Esc: Pasar la intro o abandonar programa (Sin aviso previo!)
 
+
+## Como compilar
+El codigo fuente se compila uando compilacion cruzada con OpenWatcom. Se proporciona un fichero makefile para la utilidad wmake proporcionada justo con Openwatcom. Para generar el fichero ejecutable solo es necesario ejecutar el siguiente comando:
+
+```
+wmake
+``` 
+
+Se generará un fichero sk.exe. Este fichero, juto con la carpeta assets es lo unico que es necesario para poder ejecutar el juego. El fichero makefile tambien proporciona una opcion para eliminar los ficheros generadores durante la compilacion:
+
+```
+wmake clean
+``` 
+
+En caso de no querer compilar el juego, se puede descargar el juego junto con todos los ficheros necearios en formato zip en la lista de releases. La ultima release es https://github.com/jm-fernandez/sk/releases/tag/0.2
+
 ## Creditos
 El codigo para la reproduccion de ficheros MIDI esta basada en el codigo fuente de DOSMid, por Mateusz Viste
 
@@ -46,3 +49,10 @@ El fichero MIDI que se reproduce durante el juego es de dominio publico
 Algunos de los contenidos del juego, como algunas de las imagenes y dibujos han sido generados usando inteligencia artificial
 
 El resto del contenido constituye una obra original
+
+## Un juego para MS-DOS en 2025?
+School Kombat es un juego para MS-DOS, desarrollado para el concurso C:\DOS\CONTEST organizado por el [msdos.club](https://msdos.club/)
+
+<p align="center" width="100%">
+    <img src="https://raw.githubusercontent.com/jm-fernandez/sk/refs/heads/main/assets/intro/logoc.bmp"> 
+</p>

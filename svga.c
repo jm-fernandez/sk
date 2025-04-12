@@ -23,7 +23,8 @@ bool get_video_mode_info(unsigned int mode, SVGAMode* info) {
   bool result = false;
   unsigned short selector;
   const uint16_t segment_base = dpmi_alloc_block(sizeof(ModeInfoBlock), &selector);
-  if (segment_base) {
+  if (segment_base)
+  {
     dpmi_real_regs register_data_structure = {0};
     unsigned char* base_ptr = NULL;
     ModeInfoBlock *mode_info_block = dpmi_pointer_from_segment_base(segment_base);
@@ -34,24 +35,14 @@ bool get_video_mode_info(unsigned int mode, SVGAMode* info) {
 
     dpmi_real_int(0x10, &register_data_structure);
 
-    if(mode_info_block->PhysBasePtr != NULL)
-    {
-      const unsigned long vmem_size = mode_info_block->XResolution *
-                                      mode_info_block->YResolution *
-                                      (mode_info_block->BitsPerPixel / 8) *
-                                      (1 + mode_info_block->NumberOfImagePages);
-
-      base_ptr = (unsigned char*) dpmi_mmap((uint32_t) mode_info_block->PhysBasePtr, vmem_size);
-    }
     info->mode = mode;
     info->XResolution = mode_info_block->XResolution;
     info->YResolution = mode_info_block->YResolution;
     info->BitsPerPixel = mode_info_block->BitsPerPixel;
     info->ModeAttributes = mode_info_block->ModeAttributes;
-    info->BasePtr = base_ptr;
+    info->PhysBasePtr = mode_info_block->PhysBasePtr;
     info->NumberOfImagePages = mode_info_block->NumberOfImagePages;
-    info->CurrentPage = 0;
-    info->ScanlineLength = info->XResolution;
+
     result = true;
     dpmi_free(selector);
   }
@@ -85,6 +76,7 @@ bool find_video_mode(SVGAMode* info, check_video_mode_t check_video_mode, void* 
       while (*mode_ptr != (unsigned short)-1) {
         const unsigned short mode = *mode_ptr++;
         if((mode >= 0x100) && get_video_mode_info(mode, info) && check_video_mode(info, user_data)) {
+          info->Capabilities = (unsigned short) vbe_info_block->Capabilities;
           result = true;
           break;
         }
@@ -95,13 +87,32 @@ bool find_video_mode(SVGAMode* info, check_video_mode_t check_video_mode, void* 
   return result;
 }
 
-void set_palette_format_8_bits() {
+bool set_palette_format(int bits)
+{
     dpmi_real_regs register_data_structure = {0};
 
     register_data_structure.eax = 0x4F08;
-    register_data_structure.ebx = 0x800;
-    register_data_structure.ecx = 256;
+    register_data_structure.ebx = bits * 0x100;
     dpmi_real_int(0x10, &register_data_structure);
+
+    return (unsigned short) register_data_structure.eax == VESA_RESULT_OK
+      && get_palette_format() == bits;
+}
+
+int get_palette_format()
+{
+  int result = -1;
+  dpmi_real_regs register_data_structure = {0};
+
+  register_data_structure.eax = 0x4F08;
+  register_data_structure.ebx = 1;
+  dpmi_real_int(0x10, &register_data_structure);
+
+  if((unsigned short) register_data_structure.eax == VESA_RESULT_OK)
+  {
+    result = (unsigned char) (register_data_structure.ebx >> 8);
+  }
+  return result;
 }
 
 bool set_palette_data(const palette_t* palette) {
@@ -146,13 +157,37 @@ void set_display_start(SVGAMode* video_info, unsigned int scanline_offset, unsig
   dpmi_real_int(0x10, &register_data_structure);
 }
 
-unsigned int set_logical_scanline_length(unsigned int scanline_length)
+
+bool set_logical_scanline_length(unsigned int scanline_length, svga_scanline_info* info)
 {
+  bool result = false;
   dpmi_real_regs register_data_structure = {0};
 
   register_data_structure.eax = 0x4F06;
   register_data_structure.ecx = scanline_length;
 
   dpmi_real_int(0x10, &register_data_structure);
-  return register_data_structure.ecx;
+
+  info->bytes_per_scanline = register_data_structure.ebx & 0xFFFF;
+  info->pixels_per_scanline = register_data_structure.ecx & 0xFFFF;
+  info->total_scanlines = register_data_structure.edx & 0xFFFF;
+
+  return (((register_data_structure.eax >> 8) & 0xFF) == 0U);
+}
+
+bool get_logical_scanline_length(svga_scanline_info* info)
+{
+  bool result = false;
+  dpmi_real_regs register_data_structure = {0};
+
+  register_data_structure.eax = 0x4F06;
+  register_data_structure.ebx = 1;
+
+  dpmi_real_int(0x10, &register_data_structure);
+
+  info->bytes_per_scanline = register_data_structure.ebx & 0xFFFF;
+  info->pixels_per_scanline = register_data_structure.ecx & 0xFFFF;
+  info->total_scanlines = register_data_structure.edx & 0xFFFF;
+
+  return (((register_data_structure.eax >> 8) & 0xFF) == 0U);
 }

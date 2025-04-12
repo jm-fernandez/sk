@@ -227,8 +227,6 @@ static void render_scene(fight_state_t* state)
   const unsigned int secs_first_digit = state->time / 10;
   const unsigned int secs_second_digit = state->time % 10;
   long unsigned int elapsed_time;
-  double elapsed_ms;
-  char txt[256];
 
   square_1.x = player_x_pos(player_1);
   square_1.y = player_y_pos(player_1);
@@ -275,7 +273,6 @@ static void render_scene(fight_state_t* state)
     fight_ambient_music(state);
   }
 
-
   if(state->show_boxes)
   {
     int i = 0;
@@ -306,6 +303,7 @@ static void render_scene(fight_state_t* state)
       render_square(&box, 0, SQUARE_NO_FILL);
     }
   }
+
   {
     const int y0 = 10;
     const int x0_border = 2;
@@ -467,27 +465,27 @@ static void fight_start(state_t* state)
       fight_state->palette.colors[character_colors + index] = background_palette->colors[index];
       fight_state->palette.colors[character_colors + background_colors + index] = background_palette->colors[index];
 
-      if(fight_state->palette.colors[character_colors + background_colors + index].blue >= 75)
+      if(fight_state->palette.colors[character_colors + background_colors + index].blue >= 20)
       {
-        fight_state->palette.colors[character_colors + background_colors + index].blue -= 75;
+        fight_state->palette.colors[character_colors + background_colors + index].blue -= 20;
       }
       else
       {
         fight_state->palette.colors[character_colors + background_colors + index].blue = 0;
       }
 
-      if(fight_state->palette.colors[character_colors + background_colors + index].red >= 75)
+      if(fight_state->palette.colors[character_colors + background_colors + index].red >= 20)
       {
-        fight_state->palette.colors[character_colors + background_colors + index].red -= 75;
+        fight_state->palette.colors[character_colors + background_colors + index].red -= 20;
       }
       else
       {
         fight_state->palette.colors[character_colors + background_colors + index].red = 0;
       }
 
-      if(fight_state->palette.colors[character_colors + background_colors + index].green >= 75)
+      if(fight_state->palette.colors[character_colors + background_colors + index].green >= 20)
       {
-        fight_state->palette.colors[character_colors + background_colors + index].green -= 75;
+        fight_state->palette.colors[character_colors + background_colors + index].green -= 20;
       }
       else
       {
@@ -900,7 +898,7 @@ static void end_fight_step(fight_state_t* state, const int last_key)
 static void post_fight_step(fight_state_t* state, const int last_key)
 {
   fight_context_t fight_context;
-  double elapsed_seconds = 0.0;
+  unsigned long elapsed_seconds = 0;
   int life = 0;
 
   fill_fight_context(state, &fight_context);
@@ -913,7 +911,7 @@ static void post_fight_step(fight_state_t* state, const int last_key)
   else
   {
     const unsigned long long micro_seconds = timer_time_since(state->start_time);
-    elapsed_seconds = (double) micro_seconds / 1000000;
+    elapsed_seconds = micro_seconds / 1000000;
   }
 
   player_advance(&fight_context, state->player_1, state->player_2);
@@ -1042,7 +1040,8 @@ static void in_fight_step(fight_state_t* state, const int last_key)
 static void pre_fight_step(fight_state_t* state, const int last_key)
 {
   fight_context_t fight_context;
-  double elapsed_seconds = 0.0;
+  unsigned long long micro_seconds = 0;
+  unsigned long elapsed_seconds = 0;
   int life = 0;
 
   if(state->start_time == 0)
@@ -1054,13 +1053,13 @@ static void pre_fight_step(fight_state_t* state, const int last_key)
   }
   else
   {
-    const unsigned long long micro_seconds = timer_time_since(state->start_time);
-    elapsed_seconds = (double) micro_seconds / 1000000;
+    micro_seconds = timer_time_since(state->start_time);
+    elapsed_seconds = micro_seconds / 1000000;
   }
 
   fill_fight_context(state, &fight_context);
 
-  life = min(100, elapsed_seconds * 100 / 2);
+  life = min(100, micro_seconds / 20000);
 
   player_set_life(state->player_1, life);
   player_set_life(state->player_2, life);

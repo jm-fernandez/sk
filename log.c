@@ -4,24 +4,25 @@
 
 #include "log.h"
 
-static FILE* log_file = NULL;
+const char* log_file = NULL;
 
 void log_initialize(const char* file)
 {
-    log_file = fopen(file, "w");
+    remove(file);
+    log_file = file;
 }
 
 void log_deinitialize()
 {
-    fclose(log_file);
     log_file = NULL;
 }
 
 void log_record(const char* msg)
 {
-    if(log_file)
+    FILE* f = fopen(log_file, "a");
+    if(f)
     {
-        fprintf(log_file, "%s\n", msg);
-        fflush(log_file);
+        fprintf(f, "%s\n", msg);
+        fclose(f);
     }
 }

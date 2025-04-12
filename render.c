@@ -1,13 +1,16 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
 #include "render.h"
+#include "dpmi.h"
 #include "sprite.h"
 #include "util.h"
 #include "svga.h"
 
 #define RENDER_MAX_DIRTY_AREAS 50
+#define MIN_SVGA_MEMORY        (1024 * 1024)
 
 typedef struct video_mode_info_t_ {
     unsigned int x_resolution;
@@ -31,7 +34,7 @@ typedef struct render_view_t
 {
     square_t dirty_areas[RENDER_MAX_DIRTY_AREAS];
     int dirty_area_count;
-    unsigned char* ptr;
+    unsigned long offset;
     unsigned int scanline_start;
 } render_view_t;
 
@@ -45,6 +48,8 @@ typedef struct render_t_
     unsigned int scanline_offset;
     unsigned int scanline_length;
     const sprite_t* background;
+    unsigned char* linear_address;
+    unsigned long svga_memory_size;
     render_view_t view_1;
     render_view_t view_2;
     render_view_t* active_view;
@@ -52,14 +57,53 @@ typedef struct render_t_
 } render_t;
 
 static bool check_video_mode(SVGAMode* info, void* user_data) {
+    const unsigned short attributes = VESA_MODE_ATTRIBUTE_SUPPORTED
+      + VESA_MODE_ATTRIBUTE_COLOR
+      + VESA_MODE_ATTRIBUTE_GRAPHIC
+      + VESA_MODE_ATTRIBUTE_LINEAR;
+
     const video_mode_info_t* video_mode_info = (const video_mode_info_t*) user_data;
+    const int page_size = video_mode_info->x_resolution * video_mode_info->y_resolution;
+    const int pages = MIN_SVGA_MEMORY / page_size;
     return (info->XResolution == video_mode_info->x_resolution) &&
                 (info->YResolution == video_mode_info->y_resolution) &&
-                (info->BitsPerPixel == video_mode_info->bpp);
+                (info->BitsPerPixel == video_mode_info->bpp) &&
+                ((info->ModeAttributes & attributes) == attributes) &&
+                (info->PhysBasePtr != NULL) &&
+                (info->NumberOfImagePages >= pages);
 }
 
 
 static render_t render;
+
+static void render_unmap_video_memory(render_t* render)
+{
+  if(render->linear_address != NULL)
+  {
+    dpmi_unmap(render->linear_address);
+    render->linear_address = NULL;
+  }
+}
+
+static bool render_map_video_memory(render_t* render, const SVGAMode* video_info, const svga_scanline_info* scanline_info)
+{
+  bool result = false;
+  if(video_info->PhysBasePtr != NULL)
+  {
+    const int total_memory = scanline_info->bytes_per_scanline * scanline_info->total_scanlines;
+    render->linear_address = dpmi_mmap(video_info->PhysBasePtr, total_memory);
+    if(render->linear_address)
+    {
+      result = true;
+    }
+  }
+
+  if(result == false)
+  {
+    render_unmap_video_memory(render);
+  }
+  return result;
+}
 
 bool render_initialize(unsigned int x_resolution, unsigned int y_resolution, unsigned int bpp)
 {
@@ -73,24 +117,29 @@ bool render_initialize(unsigned int x_resolution, unsigned int y_resolution, uns
     video_mode_info.bpp = bpp;
 
     video_mode_found = find_video_mode(&video_info, check_video_mode, &video_mode_info);
-    if(video_mode_found && set_super_vga_video_mode(video_info.mode))
+    if(video_mode_found && set_super_vga_video_mode(video_info.mode + VESA_SET_MODE_LINEAR))
     {
-        render.svga_context = video_info;
-        render.background = NULL;
-        render.scanline_offset = 0;
-        render.scanline_length = x_resolution;
-        memset(&(render.palette), 0, sizeof(render.palette));
-        render.palette_modified = false;
-        render.view_1.dirty_area_count = 0;
-        render.view_1.ptr = video_info.BasePtr;
-        render.view_1.scanline_start = 0;
-        render.view_2.dirty_area_count = 0;
-        render.view_2.ptr = video_info.BasePtr + x_resolution * y_resolution;
-        render.view_2.scanline_start = y_resolution;
-        render.active_view = &(render.view_1);
-        render.background_view = &(render.view_2);
+        svga_scanline_info scanline_info = {0};
+        get_logical_scanline_length(&scanline_info);
 
-        set_palette_format_8_bits();
+        if(scanline_info.total_scanlines >= y_resolution * 2
+          && render_map_video_memory(&render, &video_info, &scanline_info))
+        {
+          render.svga_context = video_info;
+          render.background = NULL;
+          render.scanline_offset = 0;
+          render.scanline_length = scanline_info.bytes_per_scanline;
+          memset(&(render.palette), 0, sizeof(render.palette));
+          render.palette_modified = false;
+          render.view_1.dirty_area_count = 0;
+          render.view_1.offset = 0;
+          render.view_1.scanline_start = 0;
+          render.view_2.dirty_area_count = 0;
+          render.view_2.offset = scanline_info.bytes_per_scanline * y_resolution;
+          render.view_2.scanline_start = y_resolution;
+          render.active_view = &(render.view_1);
+          render.background_view = &(render.view_2);
+        }
         result = true;
     }
     return result;
@@ -103,8 +152,10 @@ void render_deinitialize()
 
 static void render_from_last_frame(square_t* square)
 {
-  const unsigned char* src = render.active_view->ptr + square->y * render.scanline_length + square->x;
-  unsigned char* dst = render.background_view->ptr + square->y * render.scanline_length + square->x;
+  const unsigned char* active_base_ptr = render.linear_address + render.active_view->offset;
+  unsigned char* background_base_ptr = render.linear_address + render.background_view->offset;
+  const unsigned char* src = active_base_ptr + square->y * render.scanline_length + square->x;
+  unsigned char* dst = background_base_ptr + square->y * render.scanline_length + square->x;
   int i = 0;
   for(;i< square->sy; ++i)
   {
@@ -130,8 +181,8 @@ static void set_background(const sprite_t* sprite)
 {
   int lines = 0;
   const unsigned int height = render.svga_context.YResolution;
-  unsigned char* screen_ptr_1 = render.view_1.ptr;
-  unsigned char* screen_ptr_2 = render.view_2.ptr;
+  unsigned char* screen_ptr_1 = render.linear_address + render.view_1.offset;
+  unsigned char* screen_ptr_2 = render.linear_address + render.view_2.offset;
   const unsigned char* sprite_ptr = sprite_first_stride(sprite);
   const unsigned int line_len = sprite_width(sprite);
 
@@ -178,9 +229,14 @@ bool render_set_background(const sprite_t* background)
         {
             if(width != render.scanline_length)
             {
-                render.scanline_length = set_logical_scanline_length(width);
-                render.view_2.ptr = render.svga_context.BasePtr +
-                    render.scanline_length * render.svga_context.YResolution;
+                svga_scanline_info scanline_info = {0};
+                set_logical_scanline_length(width, &scanline_info);
+
+                render_unmap_video_memory(&render);
+                render_map_video_memory(&render, &render.svga_context, &scanline_info);
+
+                render.scanline_length = scanline_info.bytes_per_scanline;
+                render.view_2.offset = render.scanline_length * render.svga_context.YResolution;
             }
             
             set_background(background);
@@ -216,7 +272,8 @@ void render_clean()
     int i = 0;
     for(; i < view->dirty_area_count; ++i)
     {
-      clean_background(view->ptr, render.scanline_length, render.background, view->dirty_areas[i]);
+      unsigned char* view_ptr = render.linear_address + view->offset;
+      clean_background(view_ptr, render.scanline_length, render.background, view->dirty_areas[i]);
     }
     view->dirty_area_count = 0;
     render.view_modified = true;
@@ -225,7 +282,8 @@ void render_clean()
 static void render_sprite_shadow_flipped(const sprite_t* sprite, const square_t* square)
 {
   int lines = 0;
-  unsigned char* screen_ptr = render.background_view->ptr + square->x + square->y * render.scanline_length;
+  unsigned char* base_ptr = render.linear_address + render.background_view->offset;
+  unsigned char* screen_ptr = base_ptr + square->x + square->y * render.scanline_length;
 
   const unsigned int spr_height = sprite_height(sprite);
   const unsigned int spr_width = sprite_width(sprite);
@@ -267,7 +325,8 @@ static void render_sprite_shadow_flipped(const sprite_t* sprite, const square_t*
 static void render_sprite_shadow(const sprite_t* sprite, const square_t* square)
 {
   int lines = 0;
-  unsigned char* screen_ptr = render.background_view->ptr + square->x + square->y * render.scanline_length;
+  unsigned char* base_ptr = render.linear_address + render.background_view->offset;
+  unsigned char* screen_ptr = base_ptr + square->x + square->y * render.scanline_length;
 
   const unsigned int spr_height = sprite_height(sprite);
   const unsigned int spr_width = sprite_width(sprite);
@@ -308,7 +367,8 @@ static void render_sprite_shadow(const sprite_t* sprite, const square_t* square)
 static void render_sprite_scaled(const sprite_t* sprite, const square_t* square, bool flipped)
 {
   int lines = 0;
-  unsigned char* screen_ptr = render.background_view->ptr + square->x + square->y * render.scanline_length;
+  unsigned char* base_ptr = render.linear_address + render.background_view->offset;
+  unsigned char* screen_ptr = base_ptr + square->x + square->y * render.scanline_length;
 
   const unsigned int spr_height = sprite_height(sprite);
   const unsigned int spr_width = sprite_width(sprite);
@@ -320,6 +380,7 @@ static void render_sprite_scaled(const sprite_t* sprite, const square_t* square,
   const unsigned char* sprite_ptr = sprite_first_stride(sprite);
   const unsigned char transparent_color = sprite_transparent_color(sprite);
   unsigned int cur_pos = 0;
+
 
   for(; lines < square->sy; ++lines)
   {
@@ -366,11 +427,11 @@ static void render_sprite_scaled(const sprite_t* sprite, const square_t* square,
 static void render_sprite_at_flipped(const sprite_t* sprite, int x_pos, int y_pos)
 {
   int lines = 0;
-  unsigned char* screen_ptr = render.background_view->ptr + y_pos * render.scanline_length + x_pos;
+  unsigned char* base_ptr = render.linear_address + render.background_view->offset;
+  unsigned char* screen_ptr = base_ptr + y_pos * render.scanline_length + x_pos;
   const unsigned int spr_width = sprite_width(sprite);
   const unsigned int spr_height = sprite_height(sprite);
   const unsigned char* sprite_ptr = sprite_first_stride(sprite);
-
   const unsigned char transparent_color = sprite_transparent_color(sprite);
 
   for(; lines < spr_height; ++lines)
@@ -394,11 +455,11 @@ static void render_sprite_at_flipped(const sprite_t* sprite, int x_pos, int y_po
 static void render_sprite_at(const sprite_t* sprite, int x_pos, int y_pos)
 {
   int lines = 0;
-  unsigned char* screen_ptr = render.background_view->ptr + y_pos * render.scanline_length + x_pos;
+  unsigned char* base_ptr = render.linear_address + render.background_view->offset;
+  unsigned char* screen_ptr = base_ptr + y_pos * render.scanline_length + x_pos;
   const unsigned int spr_width = sprite_width(sprite);
   const unsigned int spr_height = sprite_height(sprite);
   const unsigned char* sprite_ptr = sprite_first_stride(sprite);
-
   const unsigned char transparent_color = sprite_transparent_color(sprite);
 
   for(; lines < spr_height; ++lines)
@@ -493,11 +554,12 @@ void render_square(const square_t* square, int color, int fill_color)
 {
   if(square->sx > 0 && square->sy > 0)
   {
+    unsigned char* base_ptr = render.linear_address + render.background_view->offset;
     unsigned int y = square->y;
     const unsigned int x = square->x;
     const unsigned int x_end = x + square->sx;
     const unsigned int y_end = y + square->sy;
-    unsigned char* screen_ptr = render.background_view->ptr + y * render.scanline_length + x;
+    unsigned char* screen_ptr = base_ptr + y * render.scanline_length + x;
     unsigned char* screen_line = screen_ptr;
     unsigned char* last_screen_line = screen_ptr + (square->sy - 1) * render.scanline_length;
     unsigned int x_pos = x;

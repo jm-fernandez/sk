@@ -122,10 +122,20 @@ sprite_t* create_bmp_sprite(const char *filename)
             unsigned int rounded_width = (image_header.biWidth + 3) & ~3;
             unsigned int rounded_height = image_header.biHeight;
             unsigned int raw_image_size = rounded_width * rounded_height;
+            int i;
+
             result->width = image_header.biWidth;
             result->height = image_header.biHeight;
             result->colorCount = image_header.biClrUsed;
+
             fread(&(result->palette), sizeof(result->palette.colors[0]), result->colorCount, file);
+            for(i = 0;i< result->colorCount; ++i)
+            {
+              result->palette.colors[i].red >>= 2;
+              result->palette.colors[i].blue >>= 2;
+              result->palette.colors[i].green >>= 2;
+            }
+
             result->data = (unsigned char*) malloc(raw_image_size);
             if(result->data) {
               if(image_header.biBitCount == 8)

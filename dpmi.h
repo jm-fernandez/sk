@@ -21,6 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdbool.h>
 
+#define DPMI_INVALID_DESCRIPTOR ((unsigned short)-1)
+
 typedef struct dpmi_real_regs {
 	uint32_t edi;
 	uint32_t esi;
@@ -72,8 +74,16 @@ void dpmi_free_cbk( dmpi_real_mode_address real_mode_callback);
 
 void dpmi_real_int(int inum, struct dpmi_real_regs *regs);
 
-void *dpmi_mmap(uint32_t phys_addr, unsigned int size);
-void dpmi_munmap(void *addr);
+void *dpmi_mmap(void* phys_addr, unsigned int size);
+void dpmi_unmap(void *addr);
+
+unsigned short dpmi_allocate_ldt_descriptor();
+unsigned short dpmi_create_ldt_descriptor(void* address, unsigned int limit);
+void dpmi_free_ldt_descriptor(unsigned short descriptor);
+bool dpmi_set_ldt_base_address(unsigned short descriptor, void* address);
+bool dpmi_set_ldt_limit(unsigned short descriptor, unsigned int limit);
+bool dpmi_set_ldt_rights(unsigned short descriptor, unsigned char rights, unsigned char extended_rights);
+
 
 dmpi_real_mode_address dpmi_int_hndlr_get(unsigned char int_number);
 bool dpmi_int_hndlr_set(unsigned char int_number, dmpi_real_mode_address real_addr);

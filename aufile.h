@@ -19,16 +19,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define AUFILE_H_
 
 #include <stdio.h>
+#include <stdint.h>
+
+struct playback_data {
+	uint8_t* buffer;
+	uint32_t size;
+	uint32_t pos;
+};
 
 struct au_file {
-	int rate, bits, chan;
-	void *data;
-	unsigned long size;
-
-	FILE *fp;
-	void (*close)(struct au_file*);
-	void (*reset)(struct au_file*);
-	int (*read)(struct au_file*, void*, int);
+	int rate;
+	int bits;
+	int chan;
+	struct playback_data data;
 };
 
 struct au_file *au_open(const char *fname);

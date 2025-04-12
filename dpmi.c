@@ -39,7 +39,7 @@ void dpmi_real_int(int inum, struct dpmi_real_regs *regs)
 	}
 }
 
-void * dpmi_mmap(uint32_t phys_addr, unsigned int size)
+void * dpmi_mmap(void* phys_addr, unsigned int size)
 {
   void* result = NULL;
 
@@ -57,8 +57,7 @@ void * dpmi_mmap(uint32_t phys_addr, unsigned int size)
     int 31h
 
     jc error
-
-    shl ebx, 16
+    shl ebx, 10h
     mov bx, cx
     mov result, ebx
   error:
@@ -66,44 +65,13 @@ void * dpmi_mmap(uint32_t phys_addr, unsigned int size)
   return result;
 }
 
-
-// void *dpmi_mmap(uint32_t phys_addr, unsigned int size)
-// {
-// 	uint16_t mem_high, mem_low;
-// 	uint16_t phys_high = phys_addr >> 16;
-// 	uint16_t phys_low = phys_addr & 0xffff;
-// 	uint16_t size_high = size >> 16;
-// 	uint16_t size_low = size & 0xffff;
-// 	unsigned int err, res = 0;
-
-// 	__asm {
-// 		mov eax, 0x800
-// 		mov bx, phys_high
-// 		mov cx, phys_low
-// 		mov si, size_high
-// 		mov di, size_low
-// 		int 0x31
-// 		add res, 1
-// 		mov err, eax
-// 		mov mem_high, bx
-// 		mov mem_low, cx
-// 	}
-
-// 	if(res == 2) {
-// 		return 0;
-// 	}
-// 	return (void*)(((uint32_t)mem_high << 16) | ((uint32_t)mem_low));
-// }
-
-void dpmi_munmap(void *addr)
+void dpmi_unmap(void *addr)
 {
-	uint16_t mem_high = (uint32_t)addr >> 16;
-	uint16_t mem_low = (uint16_t)addr;
-
 	__asm {
 		mov eax, 0x801
-		mov bx, mem_high
-		mov cx, mem_low
+		mov ebx, addr
+    mov cx, bx
+    shr ebx, 10h
 		int 0x31
 	}
 }
@@ -182,3 +150,99 @@ dpmi_int_hndlr_get(unsigned char int_number)
   return result;
 }
 
+unsigned short dpmi_create_ldt_descriptor(void* address, unsigned int limit)
+{
+  unsigned short result = dpmi_allocate_ldt_descriptor();
+  if(result)
+  {
+    if(!dpmi_set_ldt_base_address(result,address) || !dpmi_set_ldt_limit(result, limit))
+    {
+      dpmi_free_ldt_descriptor(result);
+      result = DPMI_INVALID_DESCRIPTOR;
+    }
+  }
+  return result;
+}
+
+unsigned short dpmi_allocate_ldt_descriptor()
+{
+  unsigned short result = DPMI_INVALID_DESCRIPTOR;
+  _asm
+  {
+    xor ax, ax
+    xor cx, cx
+    inc cx
+    int 31h
+    jc error
+    mov result, ax
+  error:
+  }
+  return result;
+}
+
+void dpmi_free_ldt_descriptor(unsigned short descriptor)
+{
+  _asm
+  {
+    xor ax, ax
+    inc ax
+    mov bx, descriptor
+    int 31h
+  }
+}
+
+bool dpmi_set_ldt_base_address(unsigned short descriptor, void* address)
+{
+  bool result = true;
+  _asm
+  {
+    mov ax, 7
+    mov bx, descriptor
+    mov ecx, address
+    mov dx, cx
+    shr ecx, 10h
+    int 31h
+    jnc ok
+    xor al,al
+    mov result, al
+  ok:
+  }
+  return result;
+}
+
+bool dpmi_set_ldt_limit(unsigned short descriptor, unsigned int limit)
+{
+  bool result = true;
+  _asm
+  {
+    mov ax, 8
+    mov bx, descriptor
+    mov ecx, limit
+    mov dx, cx
+    shr ecx, 10h
+    int 31h
+    jnc ok
+    xor al,al
+    mov result, al
+  ok:
+  }
+  return result;
+}
+
+bool dpmi_set_ldt_rights(unsigned short descriptor, unsigned char rights, unsigned char extended_rights)
+{
+  bool result = true;
+  _asm
+  {
+    mov ax, 9
+    mov bx, descriptor
+    mov ch, rights
+    mov cl, extended_rights
+    int 31h
+    jnc ok
+    xor al,al
+    mov result, al
+  ok:
+  }
+  return result;
+}

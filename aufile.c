@@ -21,7 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <errno.h>
 #include "aufile.h"
 
-int au_open_wav(struct au_file *au);
+int au_open_wav(struct au_file *au, FILE* fp);
+int au_read_wav(struct au_file *au, void *buf, int size);
+void au_reset_wav(struct au_file *au);
+void au_close_wav(struct au_file *au);
+
 
 struct au_file *au_open(const char *fname)
 {
@@ -38,9 +42,10 @@ struct au_file *au_open(const char *fname)
 		fprintf(stderr, "au_open: failed to allocate file structure: %s\n", strerror(errno));
 		return 0;
 	}
-	au->fp = fp;
 
-	if(au_open_wav(au) != -1) {
+	if(au_open_wav(au, fp) != -1)
+	{
+		fclose(fp);
 		return au;
 	}
 
@@ -52,17 +57,16 @@ struct au_file *au_open(const char *fname)
 
 void au_close(struct au_file *au)
 {
-	au->close(au);
-	fclose(au->fp);
+	au_close_wav(au);
 	free(au);
 }
 
 void au_reset(struct au_file *au)
 {
-	au->reset(au);
+	au_reset_wav(au);
 }
 
 int au_read(struct au_file *au, void *buf, int size)
 {
-	return au->read(au, buf, size);
+	return au_read_wav(au, buf, size);
 }

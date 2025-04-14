@@ -55,6 +55,8 @@
 typedef struct intro_State_t_
 {
   state_t state;
+  int pause_count;
+  int exit_count;
   sprite_t* black_screen;
   sprite_t* dos_logo;
   sprite_t* dos_context_logo;
@@ -67,6 +69,8 @@ void intro_start(struct state_t_* state)
   intro_state_t* intro_state = (intro_state_t*)state;
   if(intro_state)
   {
+    keyboard_get_key_status(KEY_CONFIG_PAUSE, &intro_state->pause_count);
+    keyboard_get_key_status(KEY_CONFIG_EXIT, &intro_state->exit_count);
   	effect_start(intro_state->effects[EFFECT_INTRO]);
     render_show(false);
   }
@@ -81,6 +85,8 @@ void intro_stop(struct state_t_* state)
 void intro_resume(struct state_t_* state)
 {
   intro_state_t* intro_state = (intro_state_t*)state;
+  keyboard_get_key_status(KEY_CONFIG_PAUSE, &intro_state->pause_count);
+  keyboard_get_key_status(KEY_CONFIG_EXIT, &intro_state->exit_count);
   effect_resume(intro_state->effects[EFFECT_INTRO]);
 }
 
@@ -89,12 +95,16 @@ bool intro_step(struct state_t_* state)
   intro_state_t* intro_state = (intro_state_t*)state;
   if(intro_state)
   {
-    const int key = keyboard_get_key();
-    if(key == KEY_CONFIG_PAUSE)
+    int current_pause_count = 0;
+    int current_exit_count = 0;
+    const bool pause = keyboard_get_key_status(KEY_CONFIG_PAUSE, &current_pause_count);
+    const bool exit = keyboard_get_key_status(KEY_CONFIG_EXIT, &current_exit_count);
+
+    if(pause && current_pause_count != intro_state->pause_count)
     {
       state_ctrl_set(game_state_pause);
     }
-    else if(key == KEY_CONFIG_EXIT)
+    else if(exit && current_exit_count != intro_state->exit_count)
     {
       state_ctrl_set(game_state_story);
     }

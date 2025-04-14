@@ -1,9 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <time.h>
 
-
-#include "keyconfig.h"
+#include "sw_player_input.h"
 #include "player.h"
 #include "sprite.h"
 #include "ai.h"
@@ -20,114 +17,106 @@
 #define IN_RANGE_DOWN_LOW_KICK   145
 #define IN_RANGE_DOWN_HICH_KICK  110  // down high kick and sweep
 #define IN_RANGE_KICK             60  // high and low kick, and upercout
-#define IN_RANGE_PUNCH            45    
+#define IN_RANGE_PUNCH            45
 
-const int high_punch[] = {
-    KEY_CONFIG_HIGH_PUNCH,
-    KEY_CONFIG_HIGH_PUNCH_END,
-    STOP_VALUE,
+const ai_key_event_t high_punch[] = {
+    {PLAYER_INPUT_HIGH_PUNCH, true},
+    {PLAYER_INPUT_HIGH_PUNCH, false},
+    {STOP_VALUE, false},
 };
 
-const int low_punch[] = {
-    KEY_CONFIG_HIGH_PUNCH,
-    KEY_CONFIG_HIGH_PUNCH_END,
-    STOP_VALUE,
+const ai_key_event_t low_punch[] = {
+    {PLAYER_INPUT_LOW_PUNCH, true},
+    {PLAYER_INPUT_LOW_PUNCH, false},
+    {STOP_VALUE, false},
 };
 
-const int high_kick[] = {
-    KEY_CONFIG_HIGH_KICK,
-    KEY_CONFIG_HIGH_KICK_END,
-    STOP_VALUE,
+const ai_key_event_t high_kick[] = {
+    {PLAYER_INPUT_HIGH_KICK, true},
+    {PLAYER_INPUT_HIGH_KICK, false},
+    {STOP_VALUE, false},
 };
 
-const int low_kick[] = {
-    KEY_CONFIG_LOW_KICK,
-    KEY_CONFIG_LOW_KICK_END,
-    STOP_VALUE,
+const ai_key_event_t low_kick[] = {
+    {PLAYER_INPUT_LOW_KICK, true},
+    {PLAYER_INPUT_LOW_KICK, false},
+    {STOP_VALUE, false},
 };
 
-const int sweep[] = {
-    KEY_CONFIG_LEFT,
-    KEY_CONFIG_LOW_KICK,
-    KEY_CONFIG_LOW_KICK_END,
-    KEY_CONFIG_LEFT_END,
-    STOP_VALUE,
+const ai_key_event_t sweep[] = {
+    {PLAYER_INPUT_LEFT, true},
+    {PLAYER_INPUT_LOW_KICK, true},
+    {PLAYER_INPUT_LOW_KICK, false},
+    {PLAYER_INPUT_LEFT, false},
+    {STOP_VALUE, false},
 };
 
-const int outward[] = {
-    KEY_CONFIG_LEFT,
-    KEY_CONFIG_HIGH_KICK,
-    KEY_CONFIG_HIGH_KICK_END,
-    KEY_CONFIG_LEFT_END,
-    STOP_VALUE,
+const ai_key_event_t outward[] = {
+    {PLAYER_INPUT_LEFT, true},
+    {PLAYER_INPUT_HIGH_KICK, true},
+    {PLAYER_INPUT_HIGH_KICK, false},
+    {PLAYER_INPUT_LEFT, false},
+    {STOP_VALUE, false},
 };
 
-const int jump_forward_and_kick[] = {
-    KEY_CONFIG_RIGHT,
-    KEY_CONFIG_UP,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_UP_END,
-    KEY_CONFIG_RIGHT_END,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_HIGH_KICK,
-    KEY_CONFIG_HIGH_KICK_END,
-    STOP_VALUE,
+const ai_key_event_t jump_forward_and_kick[] = {
+    {PLAYER_INPUT_RIGHT, true},
+    {PLAYER_INPUT_UP, true},
+    {PLAYER_INPUT_UP, false},
+    {PLAYER_INPUT_RIGHT, false},
+    {PLAYER_INPUT_HIGH_KICK, true},
+    {PLAYER_INPUT_HIGH_KICK, false},
+    {STOP_VALUE, false},
 };
 
-const int jump_forward_and_punch[] = {
-    KEY_CONFIG_RIGHT,
-    KEY_CONFIG_UP,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_UP_END,
-    KEY_CONFIG_RIGHT_END,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_HIGH_PUNCH,
-    KEY_CONFIG_HIGH_PUNCH_END,
-    STOP_VALUE,
+const ai_key_event_t jump_forward_and_punch[] = {
+    {PLAYER_INPUT_RIGHT, true},
+    {PLAYER_INPUT_UP, true},
+    {PLAYER_INPUT_UP, false},
+    {PLAYER_INPUT_RIGHT, false},
+    {PLAYER_INPUT_HIGH_PUNCH, true},
+    {PLAYER_INPUT_HIGH_PUNCH, false},
+    {STOP_VALUE, false},
 };
 
-const int jump_forward[] = {
-    KEY_CONFIG_RIGHT,
-    KEY_CONFIG_UP,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_UP_END,
-    KEY_CONFIG_RIGHT_END,
-    STOP_VALUE,
+const ai_key_event_t jump_forward[] = {
+    {PLAYER_INPUT_RIGHT, true},
+    {PLAYER_INPUT_UP, true},
+    {PLAYER_INPUT_UP, false},
+    {PLAYER_INPUT_RIGHT, false},
+    {STOP_VALUE, false},
 };
 
-const int jump_backward[] = {
-    KEY_CONFIG_LEFT,
-    KEY_CONFIG_UP,
-    KEY_CONFIG_NONE,
-    KEY_CONFIG_UP_END,
-    KEY_CONFIG_LEFT_END,
-    STOP_VALUE,
+const ai_key_event_t jump_backward[] = {
+    {PLAYER_INPUT_LEFT, true},
+    {PLAYER_INPUT_UP, true},
+    {PLAYER_INPUT_UP, false},
+    {PLAYER_INPUT_LEFT, false},
+    {STOP_VALUE, false},
 };
 
-const int down_low_kick[] = {
-    KEY_CONFIG_DOWN,
-    KEY_CONFIG_LOW_KICK,
-    KEY_CONFIG_LOW_KICK_END,
-    KEY_CONFIG_DOWN_END,
-    STOP_VALUE,
+const ai_key_event_t down_low_kick[] = {
+    {PLAYER_INPUT_DOWN, true},
+    {PLAYER_INPUT_LOW_KICK, true},
+    {PLAYER_INPUT_LOW_KICK, false},
+    {PLAYER_INPUT_DOWN, false},
+    {STOP_VALUE, false},
 };
 
-const int down_high_kick[] = {
-    KEY_CONFIG_DOWN,
-    KEY_CONFIG_HIGH_KICK,
-    KEY_CONFIG_HIGH_KICK_END,
-    KEY_CONFIG_DOWN_END,
-    STOP_VALUE,
+const ai_key_event_t down_high_kick[] = {
+    {PLAYER_INPUT_DOWN, true},
+    {PLAYER_INPUT_HIGH_KICK, true},
+    {PLAYER_INPUT_HIGH_KICK, false},
+    {PLAYER_INPUT_DOWN, false},
+    {STOP_VALUE, false},
 };
 
-const int uppercut[] = {
-    KEY_CONFIG_DOWN,
-    KEY_CONFIG_HIGH_PUNCH,
-    KEY_CONFIG_HIGH_PUNCH_END,
-    KEY_CONFIG_DOWN_END,
-    STOP_VALUE,
+const ai_key_event_t uppercut[] = {
+    {PLAYER_INPUT_DOWN, true},
+    {PLAYER_INPUT_HIGH_PUNCH, true},
+    {PLAYER_INPUT_HIGH_PUNCH, false},
+    {PLAYER_INPUT_DOWN, false},
+    {STOP_VALUE, false},
 };
 
 static bool is_jump_attack(const player_t* player)
@@ -184,17 +173,11 @@ static int compute_final_key(int key, const player_t* player)
     {
         switch(key)
         {
-            case KEY_CONFIG_RIGHT:
-                key = KEY_CONFIG_LEFT;
+            case PLAYER_INPUT_RIGHT:
+                key = PLAYER_INPUT_LEFT;
                 break;
-            case KEY_CONFIG_RIGHT_END:
-                key = KEY_CONFIG_LEFT_END;
-                break;
-            case KEY_CONFIG_LEFT:
-                key = KEY_CONFIG_RIGHT;
-                break;
-            case KEY_CONFIG_LEFT_END:
-                key = KEY_CONFIG_RIGHT_END;
+            case PLAYER_INPUT_LEFT:
+                key = PLAYER_INPUT_RIGHT;
                 break;
         }
     }
@@ -245,66 +228,28 @@ static bool get_rnd_bool(ai_context_t* ai_context)
     return (value & 1) != 0;
 }
 
-static int get_release_key(int key)
+static void ai_out_or_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
-    switch(key)
-    {
-        case KEY_CONFIG_DEFENSE:
-            result = KEY_CONFIG_DEFENSE_END;
-            break;
-        case KEY_CONFIG_RIGHT:
-            result = KEY_CONFIG_RIGHT_END;
-            break;
-        case KEY_CONFIG_LEFT:
-            result = KEY_CONFIG_LEFT_END;
-            break;
-        case KEY_CONFIG_UP:
-            result = KEY_CONFIG_UP_END;
-            break;
-        case KEY_CONFIG_DOWN:
-            result = KEY_CONFIG_DOWN_END;
-            break;
-        case KEY_CONFIG_HIGH_KICK:
-            result = KEY_CONFIG_HIGH_KICK_END;
-            break;
-        case KEY_CONFIG_LOW_KICK:
-            result = KEY_CONFIG_LOW_KICK_END;
-            break;
-        case KEY_CONFIG_HIGH_PUNCH:
-            result = KEY_CONFIG_HIGH_PUNCH_END;
-            break;
-        case KEY_CONFIG_LOW_PUNCH:
-            result = KEY_CONFIG_LOW_PUNCH_END;
-            break;
-    }
-    return result;
-}
-
-static int ai_out_or_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
-{
-    int result = KEY_CONFIG_NONE;
     const bool rvalue = get_rnd_bool(ai_context);
     if(rvalue)
     {   
         ai_context->move = jump_forward + 1;
-        result = compute_final_key(*jump_forward, player);
+        *event = *jump_forward;
+        event->key = compute_final_key( event->key, player);
     }
     else
     {
         ai_context->status = AI_STATUS_WALKING_FORWARD;
-        result = compute_final_key(KEY_CONFIG_RIGHT, player);
+        event->key = compute_final_key(PLAYER_INPUT_RIGHT, player);
+        event->status = true;
         ai_context->target = IN_RANGE_JUMP;
-        ai_context->key = result;
+        ai_context->key = event->key;
     }
-    return result;
 }
 
-static int ai_in_jmp_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_in_jmp_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     const int enemy_status = player_status(enemy);
-
     if(is_jump_attack(enemy))
     {
         const int value = get_rnd_value(ai_context);
@@ -312,16 +257,19 @@ static int ai_in_jmp_range(ai_context_t* ai_context, const fight_context_t* figh
         {
             case 0:
                 ai_context->status = AI_STATUS_WALKING_BACKWARD;
-                result = compute_final_key(KEY_CONFIG_LEFT, player);
+                event->key = compute_final_key(PLAYER_INPUT_LEFT, player);
+                event->status = true;
                 ai_context->target = IN_RANGE_DOWN_LOW_KICK;
-                ai_context->key = result;
+                ai_context->key = event->status;
             case 1:
-                ai_context->move = jump_backward;
-                result = compute_final_key(*jump_backward, player);
+                ai_context->move = jump_backward + 1;
+                *event = *jump_backward;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 2:
                 ai_context->move = sweep + 1;
-                result = compute_final_key(*sweep, player);
+                *event = *sweep;
+                event->key = compute_final_key(event->key, player);
                 break;
         }
     }
@@ -332,21 +280,23 @@ static int ai_in_jmp_range(ai_context_t* ai_context, const fight_context_t* figh
         {
             case 0:
                 ai_context->move = jump_forward_and_kick + 1;
-                result = compute_final_key(*jump_forward_and_kick, player);
+                *event = *jump_forward_and_kick;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 1:
                 ai_context->move = jump_forward_and_punch + 1;
-                result = compute_final_key(*jump_forward_and_punch, player);
+                *event = *jump_forward_and_punch;
+                event->key = compute_final_key(event->key, player);
                 break;
             default:
                 ai_context->status = AI_STATUS_WALKING_FORWARD;
-                result = compute_final_key(KEY_CONFIG_RIGHT, player);
+                event->key = compute_final_key( PLAYER_INPUT_RIGHT, player);
+                event->status = true;
                 ai_context->target = IN_RANGE_DOWN_LOW_KICK;
-                ai_context->key = result;
+                ai_context->key = event->key;
                 break;
         }
     }
-    return result;
 }
 
 static bool is_player_in_floor(const fight_context_t* fight_context, const player_t* player)
@@ -355,72 +305,74 @@ static bool is_player_in_floor(const fight_context_t* fight_context, const playe
     return y0 >= fight_context->floor;
 }
 
-static int ai_enter_walking_backward(ai_context_t* ai_context, const player_t* player)
+static void ai_enter_walking_backward(ai_context_t* ai_context, const player_t* player, ai_key_event_t* event)
 {
-    const int result = compute_final_key(KEY_CONFIG_LEFT, player);
+    event->key = compute_final_key(PLAYER_INPUT_LEFT, player);
+    event->status = true;
+
     ai_context->status = AI_STATUS_WALKING_BACKWARD;
     ai_context->target = IN_RANGE_DOWN_LOW_KICK;
-    ai_context->key = result;
-    return result;
+    ai_context->key = event->key;
 }
 
-static int ai_enter_walking_forward(ai_context_t* ai_context, const player_t* player, int target)
+static void ai_enter_walking_forward(ai_context_t* ai_context, const player_t* player, ai_key_event_t* event, int target)
 {
-    const int result = compute_final_key(KEY_CONFIG_RIGHT, player);
+    event->key = compute_final_key(PLAYER_INPUT_RIGHT, player);
+    event->status = true;
     ai_context->status = AI_STATUS_WALKING_FORWARD;
     ai_context->target = target;
-    ai_context->key = result;
-    return result;
+    ai_context->key = event->key;
 }
 
-static int ai_enter_defense(ai_context_t* ai_context, const player_t* player)
+static void ai_enter_defense(ai_context_t* ai_context, const player_t* player, ai_key_event_t* event)
 {
-    const int result = compute_final_key(KEY_CONFIG_DEFENSE, player);
+    event->key = compute_final_key(PLAYER_INPUT_DEFENSE, player);
+    event->status = true;
+
     ai_context->status = AI_STATUS_WALKING_BACKWARD;
     ai_context->target = IN_RANGE_DOWN_LOW_KICK;
-    ai_context->key = result;
-    return result;    
+    ai_context->key = event->key;
 }
 
-static int ai_enter_down_defense(ai_context_t* ai_context, const player_t* player)
+static void ai_enter_down_defense(ai_context_t* ai_context, const player_t* player, ai_key_event_t* event)
 {
-    const int result = compute_final_key(KEY_CONFIG_DEFENSE, player);
+    event->key = compute_final_key(PLAYER_INPUT_DEFENSE, player);
+    event->status = true;
     ai_context->status = AI_STATUS_DOWN_DEFENSE;
     ai_context->counter = 1;
-    return result;  
 }
 
 
-static int ai_in_down_high_kick_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_in_down_high_kick_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     const int enemy_status = player_status(player);
     if((enemy_status == STATUS_SWEEP) || (enemy_status == STATUS_DOWN_LOW_KICK))
     {
         if(get_rnd_value(ai_context) % 5 == 0)
         {
             ai_context->move = jump_backward + 1;
-            result = compute_final_key(*jump_backward, player);
+            *event = *jump_backward;
+            event->key = compute_final_key(event->key, player);
         }
         else
         {
-            result = ai_enter_walking_backward(ai_context, player);
+            ai_enter_walking_backward(ai_context, player, event);
         }
     }
     else if(enemy_status == STATUS_DOWN_HIGH_KICK)
     {
         if(get_rnd_bool(ai_context))
         {
-            result = ai_enter_walking_backward(ai_context, player);
+            ai_enter_walking_backward(ai_context, player, event);
         }
         else
         {
-            result = ai_enter_down_defense(ai_context, player);
+            ai_enter_down_defense(ai_context, player, event);
         }
     }
     else if(enemy_status == STATUS_JUMP_KICK || enemy_status == STATUS_JUMP_PUNCH)
     {
-            result = ai_enter_down_defense(ai_context, player);
+        ai_enter_down_defense(ai_context, player, event);
     }
     else
     {
@@ -428,51 +380,54 @@ static int ai_in_down_high_kick_range(ai_context_t* ai_context, const fight_cont
         {
             case 0:
                 ai_context->move = down_low_kick + 1;
-                result = compute_final_key(*down_low_kick, player);
+                *event = *down_low_kick;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 1:
                 ai_context->move = down_high_kick + 1;
-                result = compute_final_key(*down_high_kick, player);
+                *event = *down_high_kick;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 2:
                 ai_context->move = sweep + 1;
-                result = compute_final_key(*sweep, player);
+                *event = *sweep;
+                event->key = compute_final_key(event->key, player);
                 break;
         }
     }
-    return result;
 }
 
-static int ai_in_down_low_kick_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_in_down_low_kick_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     if(is_far_attack(enemy))
     {
         if(get_rnd_value(ai_context) % 5 == 0)
         {
             ai_context->move = jump_backward + 1;
-            result = compute_final_key(*jump_backward, player);
+            *event = *jump_backward;
+            event->key = compute_final_key(event->key, player);
         }
         else
         {
-            result = ai_enter_walking_backward(ai_context, player);
+            ai_enter_walking_backward(ai_context, player, event);
         }
     }
     else if(is_jump_attack(enemy))
     {
         if(get_rnd_bool(ai_context))
         {
-            result = ai_enter_defense(ai_context, player);
+            ai_enter_defense(ai_context, player, event);
         }
         else
         {
-            result = ai_enter_walking_forward(ai_context, player, IN_RANGE_DOWN_HICH_KICK);
+            ai_enter_walking_forward(ai_context, player, event, IN_RANGE_DOWN_HICH_KICK);
         }
     }
     else if(is_player_in_floor(fight_context, enemy))
     {
         ai_context->move = down_low_kick + 1;
-        result = compute_final_key(*down_low_kick, player);
+        *event = *down_low_kick;
+        event->key = compute_final_key(event->key, player);
     }
     else
     {
@@ -483,53 +438,59 @@ static int ai_in_down_low_kick_range(ai_context_t* ai_context, const fight_conte
             {
                 case 0:
                     ai_context->move = high_kick + 1;
-                    result = compute_final_key(*high_kick, player);
+                    *event = *high_kick;
+                    event->key = compute_final_key(event->key, player);
+                    break;
                 case 1:
                     ai_context->move = high_punch + 1;
-                    result = compute_final_key(*high_punch, player);
+                    *event = *high_punch;
+                    event->key = compute_final_key(event->key, player);
+                    break;
                 default:
                     ai_context->move = outward + 1;
-                    result = compute_final_key(*outward, player);
+                    *event = *outward;
+                    event->key = compute_final_key(event->key, player);
             }
         }
     }
-    return result;
 }
 
-static int ai_in_punch_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_in_punch_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     const int enemy_status = player_status(player);
     if(enemy_status == STATUS_JUMP_KICK || enemy_status == STATUS_JUMP_PUNCH)
     {
-        result = ai_enter_defense(ai_context, player);
+        ai_enter_defense(ai_context, player, event);
     }
     else if(enemy_status == STATUS_SWEEP || enemy_status == STATUS_DOWN_LOW_KICK)
     {
         ai_context->move = jump_backward + 1;
-        result = compute_final_key(*jump_backward, player);
+        *event = *jump_backward;
+        event->key = compute_final_key(event->key, player);
     }
     else if(enemy_status == STATUS_UPPERCUT || enemy_status == STATUS_LOW_KICK)
     {
-        result = ai_enter_defense(ai_context, player);
+        ai_enter_defense(ai_context, player, event);
     }
     else if(enemy_status == STATUS_HIGH_KICK || enemy_status == STATUS_HIGH_PUNCH)
     {
         switch(get_rnd_value(ai_context) % 4)
         {
             case 0:
-                result = ai_enter_defense(ai_context, player);
+                ai_enter_defense(ai_context, player, event);
                 break;
             case 1:
                 ai_context->move = down_low_kick + 1;
-                result = compute_final_key(*down_low_kick, player);
+                *event = *down_low_kick;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 2:
                 ai_context->move = sweep + 1;
-                result = compute_final_key(*sweep, player);
+                *event = *sweep;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 3:
-                result = ai_enter_down_defense(ai_context, player);
+                ai_enter_down_defense(ai_context, player, event);
                 break;
         }
     }
@@ -539,38 +500,43 @@ static int ai_in_punch_range(ai_context_t* ai_context, const fight_context_t* fi
         {
             case 0:
                 ai_context->move = low_kick + 1;
-                result = compute_final_key(*low_kick, player);            
+                *event = *low_kick;
+                break;
             case 1:
                 ai_context->move = high_kick + 1;
-                result = compute_final_key(*high_kick, player);
+                *event = *high_kick;
+                break;
             case 2:
                 ai_context->move = uppercut + 1;
-                result = compute_final_key(*uppercut, player);
+                *event = *uppercut;
+                break;
             case 3:
                 ai_context->move = high_punch + 1;
-                result = compute_final_key(*high_punch, player);
+                *event = *high_punch;
+                break;
             case 4:
                 ai_context->move = low_punch + 1;
-                result = compute_final_key(*low_punch, player);
+                *event = *low_punch;
+                break;
         }
+        event->key = compute_final_key(event->key, player);
     }
-    return result;
 }
 
-static int ai_in_kick_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_in_kick_range(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
-    const int enemy_status = player_status(player);
+     const int enemy_status = player_status(player);
     if(enemy_status == STATUS_JUMP_KICK || enemy_status == STATUS_JUMP_PUNCH)
     {
         if(get_rnd_bool(ai_context))
         {
-            result = ai_enter_defense(ai_context, player);
+            ai_enter_defense(ai_context, player, event);
         }
         else
         {
             ai_context->move = uppercut + 1;
-            result = compute_final_key(*uppercut, player);            
+            *event = *uppercut;
+            event->key = compute_final_key(event->key, player);
         }
     }
     else if(enemy_status == STATUS_SWEEP || enemy_status == STATUS_DOWN_LOW_KICK)
@@ -578,34 +544,37 @@ static int ai_in_kick_range(ai_context_t* ai_context, const fight_context_t* fig
         if(get_rnd_value(ai_context) % 5 == 0)
         {
             ai_context->move = jump_backward + 1;
-            result = compute_final_key(*jump_backward, player);
+            *event = *jump_backward;
+            event->key = compute_final_key(event->key, player);
         }
         else
         {
-            result = ai_enter_walking_backward(ai_context, player);
+            ai_enter_walking_backward(ai_context, player, event);
         }
     }
     else if(enemy_status == STATUS_UPPERCUT || enemy_status == STATUS_LOW_KICK)
     {
-        result = ai_enter_defense(ai_context, player);
+        ai_enter_defense(ai_context, player, event);
     }
     else if(enemy_status == STATUS_HIGH_KICK || enemy_status == STATUS_HIGH_PUNCH)
     {
         switch(get_rnd_value(ai_context) % 4)
         {
             case 0:
-                result = ai_enter_defense(ai_context, player);
+                ai_enter_defense(ai_context, player, event);
                 break;
             case 1:
                 ai_context->move = down_low_kick + 1;
-                result = compute_final_key(*down_low_kick, player);
+                *event = *down_low_kick;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 2:
                 ai_context->move = sweep + 1;
-                result = compute_final_key(*sweep, player);
+                *event = *sweep;
+                event->key = compute_final_key(event->key, player);
                 break;
             case 3:
-                result = ai_enter_down_defense(ai_context, player);
+                ai_enter_down_defense(ai_context, player, event);
                 break;
         }
     }
@@ -615,18 +584,20 @@ static int ai_in_kick_range(ai_context_t* ai_context, const fight_context_t* fig
         {
             case 0:
                 ai_context->move = low_kick + 1;
-                result = compute_final_key(*low_kick, player);            
+                *event = *low_kick;
+                event->key = compute_final_key(event->key, player);
+                break;
             case 1:
                 ai_context->move = high_kick + 1;
-                result = compute_final_key(*high_kick, player);
+                *event = *high_kick;
+                event->key = compute_final_key(event->key, player);
+                break;
         }
     }
-    return result;
 }
 
-static int ai_waiting(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_waiting(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     const int distance = distance_to_enemy(player, enemy);
     const int current_status = player_status(player);
 
@@ -634,87 +605,29 @@ static int ai_waiting(ai_context_t* ai_context, const fight_context_t* fight_con
     {
         if(distance > IN_RANGE_JUMP)
         {
-            result = ai_out_or_range(ai_context, fight_context, player, enemy);
+            ai_out_or_range(ai_context, fight_context, player, enemy, event);
         }
         else if(distance < IN_RANGE_JUMP && distance > IN_RANGE_DOWN_LOW_KICK)
         {
-            result = ai_in_jmp_range(ai_context, fight_context, player, enemy);
+            ai_in_jmp_range(ai_context, fight_context, player, enemy, event);
         }
         else if(distance < IN_RANGE_DOWN_LOW_KICK && distance > IN_RANGE_DOWN_HICH_KICK)
         {
-            result = ai_in_down_low_kick_range(ai_context, fight_context, player, enemy);
+            ai_in_down_low_kick_range(ai_context, fight_context, player, enemy, event);
         }
         else if(distance < IN_RANGE_DOWN_HICH_KICK && distance > IN_RANGE_KICK)
         {
-            result = ai_in_down_high_kick_range(ai_context, fight_context, player, enemy);
+            ai_in_down_high_kick_range(ai_context, fight_context, player, enemy, event);
         }
         else if((distance < IN_RANGE_KICK) && (distance > IN_RANGE_PUNCH))
         {
-             result = ai_in_kick_range(ai_context, fight_context, player, enemy);
+             ai_in_kick_range(ai_context, fight_context, player, enemy, event);
         }
         else if(distance < IN_RANGE_PUNCH)
         {
-             result = ai_in_punch_range(ai_context, fight_context, player, enemy);
+             ai_in_punch_range(ai_context, fight_context, player, enemy, event);
         }
-
-        // else if(distance > 200)
-        // {
-        //     if(enemy_status == STATUS_JUMP_FORWARD
-        //     || enemy_status == STATUS_JUMP_KICK
-        //     || enemy_status == STATUS_JUMP_PUNCH)
-        //     {
-        //         const bool rvalue = get_rnd_bool(ai_context);
-        //         if(rvalue)
-        //         {
-        //             ai_context->move = down_low_kick + 1;
-        //             result = compute_final_key(*down_low_kick, player);                        
-        //         }
-        //         else {
-        //             const bool rvalue2 = get_rnd_bool(ai_context);
-        //             if(rvalue2)
-        //             {
-        //                 ai_context->status = AI_STATUS_DEFENSE;
-        //                 result = compute_final_key(KEY_CONFIG_DEFENSE, player);
-        //                 ai_context->key = result;
-        //             }
-        //             else
-        //             {
-        //                 ai_context->move = jump_backward + 1;
-        //                 result = compute_final_key(*jump_backward, player);                              
-        //             }
-        //         }
-        //     }
-        //     else
-        //     {
-        //         const bool rvalue = get_rnd_bool(ai_context);
-        //         if(rvalue)
-        //         {
-        //             ai_context->move = jump_forward_and_kick + 1;
-        //             result = compute_final_key(*jump_forward_and_kick, player);
-        //         }
-        //         else
-        //         {
-        //             ai_context->move = down_low_kick + 1;
-        //             result = compute_final_key(*down_low_kick, player);
-        //         }
-        //     }
-        // }
-        // else
-        // {
-        //     const bool rvalue = get_rnd_bool(ai_context);
-        //     if(rvalue)
-        //     {
-        //         ai_context->move = jump_forward_and_kick + 1;
-        //         result = compute_final_key(*jump_forward_and_kick, player);
-        //     }
-        //     else
-        //     {
-        //         ai_context->move = down_low_kick + 1;
-        //         result = compute_final_key(*down_low_kick, player);
-        //     }
-        // }
     }
-    return result;
 }
 
 static bool is_attacking_and_in_range(const player_t* player, const player_t* enemy)
@@ -727,9 +640,8 @@ static bool is_attacking_and_in_range(const player_t* player, const player_t* en
         || (is_close_attack(enemy) && (distance < IN_RANGE_PUNCH));
 }
 
-static int ai_walking_forward(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_walking_forward(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     const int distance = distance_to_enemy(player, enemy);
     const int enemy_status = player_status(enemy);
 
@@ -737,83 +649,99 @@ static int ai_walking_forward(ai_context_t* ai_context, const fight_context_t* f
     || (is_attacking_and_in_range(player, enemy)))
     {
         ai_context->status = AI_STATUS_WAITING;
-        result = get_release_key(ai_context->key);
+        event->key = ai_context->key;
+        event->status = false;
     }
-    return result;
 }
 
-static int ai_defense(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_defense(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     if(!is_attacking_and_in_range(player, enemy))
     {
         ai_context->status = AI_STATUS_WAITING;
-        result = KEY_CONFIG_DEFENSE_END;
+        event->key = PLAYER_INPUT_DEFENSE;
+        event->status = false;
     }
-    return result;
 }
 
-static int ai_down_defense(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_down_defense(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     if(ai_context->counter == 1)
     {
-        ai_context->status = 2;
-        result = KEY_CONFIG_DOWN;
+        ai_context->counter = 2;
+        event->key = PLAYER_INPUT_DOWN;
+        event->status = true;
     }
     else if(ai_context->counter == 2)
     {
         if(!is_attacking_and_in_range(player, enemy))
         {
-            ai_context->status = 4;
-            result = KEY_CONFIG_DOWN_END;
+            ai_context->counter = 3;
+            event->key = PLAYER_INPUT_DOWN;
+            event->status = false;
         }
     }
     else
     {
         ai_context->status = AI_STATUS_WAITING;
-        result = KEY_CONFIG_DEFENSE_END;
+        event->key = PLAYER_INPUT_DEFENSE;
+        event->status = false;
     }
-    return result;
 }
 
-static int ai_walking_backward(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+static void ai_walking_backward(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy, ai_key_event_t* event)
 {
-    int result = KEY_CONFIG_NONE;
     const int distance = distance_to_enemy(player, enemy);
     if(distance < IN_RANGE_PUNCH || distance > IN_RANGE_JUMP)
     {
         ai_context->status = AI_STATUS_WAITING;
-        result = get_release_key(ai_context->key);
+        event->key = ai_context->key;
+        event->status = false;
     }
-    return result;
 }
 
-int ai_last_key(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
+void ai_think(ai_context_t* ai_context, const fight_context_t* fight_context, const player_t* player, const player_t* enemy)
 {
-    int result = KEY_CONFIG_NONE;
-    if(ai_context->move == NULL || *ai_context->move == STOP_VALUE)
+    if(ai_context->input)
     {
-        switch(ai_context->status)
+        ai_key_event_t result = {STOP_VALUE, false};
+        if(ai_context->move == NULL || ai_context->move->key == STOP_VALUE)
         {
-            case AI_STATUS_WAITING:
-                result = ai_waiting(ai_context, fight_context, player, enemy);
-                break;
-            case AI_STATUS_WALKING_FORWARD:
-                result = ai_walking_forward(ai_context, fight_context, player, enemy);
-                break;
-            case AI_STATUS_WALKING_BACKWARD:
-                result = ai_walking_backward(ai_context, fight_context, player, enemy);
-                break;
-            case AI_STATUS_DEFENSE:
-                result = ai_defense(ai_context, fight_context, player, enemy);
-                break;
-            case AI_STATUS_DOWN_DEFENSE:
-                result = ai_down_defense(ai_context, fight_context, player, enemy);
+            switch(ai_context->status)
+            {
+                case AI_STATUS_WAITING:
+                    ai_waiting(ai_context, fight_context, player, enemy, &result);
+                    break;
+                case AI_STATUS_WALKING_FORWARD:
+                    ai_walking_forward(ai_context, fight_context, player, enemy, &result);
+                    break;
+                case AI_STATUS_WALKING_BACKWARD:
+                    ai_walking_backward(ai_context, fight_context, player, enemy, &result);
+                    break;
+                case AI_STATUS_DEFENSE:
+                    ai_defense(ai_context, fight_context, player, enemy, &result);
+                    break;
+                case AI_STATUS_DOWN_DEFENSE:
+                    ai_down_defense(ai_context, fight_context, player, enemy, &result);
+            }
+        }
+        else {
+            result = *ai_context->move++;
+            result.key = compute_final_key(result.key, player);
+        }
+
+        if(result.key != STOP_VALUE)
+        {
+            sw_player_input_set_status(ai_context->input, result.key, result.status);
         }
     }
-    else {
-        result = compute_final_key(*ai_context->move++, player);
+}
+
+void ai_set_input(ai_context_t* ai_context, player_input_t* input)
+{
+    if(input != NULL)
+    {
+        sw_player_input_clear(input);
     }
-    return result;
+    ai_context->input = input;
 }

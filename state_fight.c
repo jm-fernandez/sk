@@ -4,6 +4,7 @@
 
 #include "keyboard.h"
 #include "keyconfig.h"
+#include "player_input.h"
 #include "state.h"
 #include "state_ctrl.h"
 #include "state.h"
@@ -13,6 +14,8 @@
 #include "timer.h"
 
 #include "player.h"
+#include "keyboard_player_input.h"
+#include "sw_player_input.h"
 #include "ai.h"
 
 #include "player_standing.h"
@@ -72,10 +75,11 @@ typedef struct fight_state_t_
 {
   state_t state;
   fight_status_t status;
-  player_input_t input;
   sprite_t* background;
   palette_t palette;
   ai_context_t ai_context;
+  player_input_t* player_1_input;
+  player_input_t* player_2_input;
   player_t* player_1;
   player_t* player_2;
   digits_t* digits;
@@ -88,14 +92,16 @@ typedef struct fight_state_t_
   unsigned long stop_time;
   bool show_boxes;
   play_midi_t* ambient_sound;
+  int pause_count;
+  int exit_count;
 } fight_state_t;
 
 #define FLOOR_Y                     475
 
-static void in_fight_step(fight_state_t* state, const int last_key);
-static void pre_fight_step(fight_state_t* state, const int last_key);
-static void post_fight_step(fight_state_t* state, const int last_key);
-static void end_fight_step(fight_state_t* state, const int last_key);
+static void in_fight_step(fight_state_t* state);
+static void pre_fight_step(fight_state_t* state);
+static void post_fight_step(fight_state_t* state);
+static void end_fight_step(fight_state_t* state);
 
 static void fight_ambient_music(fight_state_t* state)
 {
@@ -438,6 +444,9 @@ static void fight_start(state_t* state)
   unsigned int height_2 = 0U;
   square_t square;
 
+  keyboard_get_key_status(KEY_CONFIG_PAUSE, &fight_state->pause_count);
+  keyboard_get_key_status(KEY_CONFIG_EXIT, &fight_state->exit_count);
+
   fight_state->palette = *sprite_palette(fight_state->player_1->poses[0].sprite);
 
   palette_info.foreground_index = 0;
@@ -562,6 +571,9 @@ static void fight_resume(state_t* state)
   fight_state_t* fight_state = (fight_state_t*)state;
   fight_state->start_time += timer_time_since(fight_state->stop_time);
   play_midi_resume(fight_state->ambient_sound);
+
+  keyboard_get_key_status(KEY_CONFIG_PAUSE, &fight_state->pause_count);
+  keyboard_get_key_status(KEY_CONFIG_EXIT, &fight_state->exit_count);  
 }
 
 static void check_scenario_limits(fight_state_t* fight_state)
@@ -830,72 +842,11 @@ static void adjust_positions(fight_state_t* fight_state)
   render_set_view_offset(view_offset);
 }
 
-static void update_input(player_input_t* input, const int last_key)
-{
-  switch(last_key)
-  {
-    case KEY_CONFIG_UP:
-      player_input_press_key(input, PLAYER_INPUT_UP);
-      break;
-    case KEY_CONFIG_RIGHT:
-      player_input_press_key(input, PLAYER_INPUT_RIGHT);
-      break;
-    case KEY_CONFIG_LEFT:
-      player_input_press_key(input, PLAYER_INPUT_LEFT);
-      break;
-    case KEY_CONFIG_DOWN:
-      player_input_press_key(input, PLAYER_INPUT_DOWN);
-      break;
-    case KEY_CONFIG_HIGH_PUNCH:
-      player_input_press_key(input, PLAYER_INPUT_HIGH_PUNCH);
-      break;
-    case KEY_CONFIG_LOW_PUNCH:
-      player_input_press_key(input, PLAYER_INPUT_LOW_PUNCH);
-      break;
-    case KEY_CONFIG_HIGH_KICK:
-      player_input_press_key(input, PLAYER_INPUT_HIGH_KICK);
-      break;
-    case KEY_CONFIG_LOW_KICK:
-      player_input_press_key(input, PLAYER_INPUT_LOW_KICK);
-      break;
-    case KEY_CONFIG_DEFENSE:
-      player_input_press_key(input, PLAYER_INPUT_DEFENSE);
-      break;
-    case KEY_CONFIG_UP_END:
-      player_input_release_key(input, PLAYER_INPUT_UP);
-      break;
-    case KEY_CONFIG_RIGHT_END:
-      player_input_release_key(input, PLAYER_INPUT_RIGHT);
-      break;
-    case KEY_CONFIG_LEFT_END:
-      player_input_release_key(input, PLAYER_INPUT_LEFT);
-      break;
-    case KEY_CONFIG_DOWN_END:
-      player_input_release_key(input, PLAYER_INPUT_DOWN);
-      break;
-    case KEY_CONFIG_HIGH_PUNCH_END:
-      player_input_release_key(input, PLAYER_INPUT_HIGH_PUNCH);
-      break;
-    case KEY_CONFIG_LOW_PUNCH_END:
-      player_input_release_key(input, PLAYER_INPUT_LOW_PUNCH);
-      break;
-    case KEY_CONFIG_HIGH_KICK_END:
-      player_input_release_key(input, PLAYER_INPUT_HIGH_KICK);
-      break;
-    case KEY_CONFIG_LOW_KICK_END:
-      player_input_release_key(input, PLAYER_INPUT_LOW_KICK);
-      break;
-    case KEY_CONFIG_DEFENSE_END:
-      player_input_release_key(input, PLAYER_INPUT_DEFENSE);
-      break;
-  }
-}
-
-static void end_fight_step(fight_state_t* state, const int last_key)
+static void end_fight_step(fight_state_t* state)
 {
 }
 
-static void post_fight_step(fight_state_t* state, const int last_key)
+static void post_fight_step(fight_state_t* state)
 {
   fight_context_t fight_context;
   unsigned long elapsed_seconds = 0;
@@ -905,8 +856,9 @@ static void post_fight_step(fight_state_t* state, const int last_key)
   if(state->start_time == 0)
   {
     timer_read(&state->start_time);
-    player_clear_input(state->player_1);
-    player_clear_input(state->player_2);
+    player_set_input(state->player_1,NULL);
+    player_set_input(state->player_2,NULL);
+    ai_set_input(&state->ai_context, NULL);
   }
   else
   {
@@ -920,7 +872,6 @@ static void post_fight_step(fight_state_t* state, const int last_key)
 
   if(elapsed_seconds < 3)
   {
-    update_input(&state->input, last_key);
     if(state->to_render_in_center == NULL)
     {
       const int player_1_status = player_status(state->player_1);
@@ -985,24 +936,27 @@ static void post_fight_step(fight_state_t* state, const int last_key)
       state->start_time = 0;
       state->to_render_in_center = NULL;
       state->status = end_fight;
-      end_fight_step(state, last_key);     
+      end_fight_step(state);
     }
     else
     {
       state->start_time = 0;
       state->to_render_in_center = NULL;
       state->status = pre_fight;
-      pre_fight_step(state, last_key);
+      pre_fight_step(state);
     }
   }
 }
 
-static void in_fight_step(fight_state_t* state, const int last_key)
+static void in_fight_step(fight_state_t* state)
 {
   if(state->start_time == 0)
   {
     timer_read(&state->start_time);
     ai_init(&state->ai_context);
+    ai_set_input(&state->ai_context, state->player_2_input);
+    player_set_input(state->player_1, state->player_1_input);
+    player_set_input(state->player_2, state->player_2_input);
   }
 
   if(state->time == 0
@@ -1011,12 +965,11 @@ static void in_fight_step(fight_state_t* state, const int last_key)
   {
     state->start_time = 0;
     state->status = post_fight;
-    post_fight_step(state, last_key);
+    post_fight_step(state);
   }
   else
   {
     fight_context_t fight_context;
-    int player_2_key = KEY_CONFIG_NONE;
     const unsigned long long elapsed_time = timer_time_since(state->start_time);
     const unsigned long long elapsed_seconds = elapsed_time /  1000000;
     const unsigned int secs = max(60 - elapsed_seconds, 0);
@@ -1024,11 +977,7 @@ static void in_fight_step(fight_state_t* state, const int last_key)
     fill_fight_context(state, &fight_context);
     state->time = secs;
 
-    update_input(&state->input, last_key);
-    update_input(player_input(state->player_1), last_key);
-
-   player_2_key = ai_last_key(&state->ai_context,&fight_context, state->player_2, state->player_1);
-   update_input(player_input(state->player_2), player_2_key);
+    ai_think(&state->ai_context,&fight_context, state->player_2, state->player_1);
 
     player_advance(&fight_context, state->player_1, state->player_2);
     player_advance(&fight_context, state->player_2, state->player_1);
@@ -1037,7 +986,7 @@ static void in_fight_step(fight_state_t* state, const int last_key)
   }
 }
 
-static void pre_fight_step(fight_state_t* state, const int last_key)
+static void pre_fight_step(fight_state_t* state)
 {
   fight_context_t fight_context;
   unsigned long long micro_seconds = 0;
@@ -1069,7 +1018,6 @@ static void pre_fight_step(fight_state_t* state, const int last_key)
 
   if(life < 100)
   {
-    update_input(&state->input, last_key);
     if(elapsed_seconds < 1)
     {
       state->to_render_in_center = state->fight_sprites[state->round];
@@ -1093,27 +1041,32 @@ static void pre_fight_step(fight_state_t* state, const int last_key)
   }
   else
   {
-    player_set_input(state->player_1, &state->input);
     state->to_render_in_center = NULL;
     state->status = in_fight;
     state->start_time = 0;
-    in_fight_step(state, last_key);
+    in_fight_step(state);
   }
 }
 
 static bool fight_step(state_t* state)
 {
-  const int last_key = keyboard_get_key();
   fight_state_t* fight_state = (fight_state_t*)state;
   bool result = true;
+  bool pause_pressed = false;
+  bool exit_pressed = false;
+  int pause_count = 0;
+  int exit_count = 0;
 
   timer_read(&fight_state->step_start);
+  pause_pressed = keyboard_get_key_status(KEY_CONFIG_PAUSE, &pause_count);
+  exit_pressed = keyboard_get_key_status(KEY_CONFIG_EXIT, &exit_count);
 
-  if(last_key == KEY_CONFIG_PAUSE)
+
+  if(pause_pressed && pause_count != fight_state->pause_count)
   {
       state_ctrl_set(game_state_pause);
   }
-  else if(last_key == KEY_CONFIG_EXIT)
+  else if(exit_pressed && exit_count != fight_state->exit_count)
   {
       result = false;
   }
@@ -1123,13 +1076,13 @@ static bool fight_step(state_t* state)
     switch(fight_state->status)
     {
       case pre_fight:
-        pre_fight_step(fight_state, last_key);
+        pre_fight_step(fight_state);
         break;
       case in_fight:
-        in_fight_step(fight_state, last_key);
+        in_fight_step(fight_state);
         break;
       case post_fight:
-        post_fight_step(fight_state, last_key);
+        post_fight_step(fight_state);
         break;
       case end_fight:
         result = false;
@@ -1161,6 +1114,15 @@ void fight_free(state_t* state)
     if(fight_state->player_2)
     {
       player_free(fight_state->player_2);
+    }
+
+    if(fight_state->player_1_input)
+    {
+      player_input_free(fight_state->player_1_input);
+    }
+    if(fight_state->player_2_input)
+    {
+      player_input_free(fight_state->player_2_input);
     }
 
     if(fight_state->digits)
@@ -1231,10 +1193,15 @@ state_t* state_fight_create()
       log_record("Error loading ambient music");
     }
 
+    result->player_1_input = create_keyboard_player_input();
+    result->player_2_input = create_sw_player_input();
+
     if( i != FIGHT_SPRITE_COUNT || 
        result->background  == NULL ||
        result->player_1 == NULL ||
        result->player_2 == NULL ||
+       result->player_1_input == NULL ||
+       result->player_2_input == NULL ||
        result->digits == NULL)
     {
         fight_free(&(result->state));

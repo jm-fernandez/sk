@@ -57,6 +57,8 @@ OBJECT_FILES = sk.obj                           &
                player_win.obj                   &
                digits.obj                       &
                ai.obj                           &
+               keyboard_player_input.obj        &
+               sw_player_input.obj              &
                log.obj
 
 all: $(BINARY_NAME)

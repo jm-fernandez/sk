@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define SCANCODE_NONE            0
+#define SCANCODE_RELEASE_FLAG     128
 
 #define SCANCODE_ESC             1
 #define SCANCODE_P               25
@@ -18,22 +18,22 @@
 #define SCANCODE_ARROW_RIGHT     77
 #define SCANCODE_ARROW_DOWN      80
 
-#define SCANCODE_ESC_R           129
-#define SCANCODE_P_R             153
-#define SCANCODE_A_R             158
-#define SCANCODE_S_R             159
-#define SCANCODE_D_R             160
-#define SCANCODE_X_R             173
-#define SCANCODE_C_R             174
+#define SCANCODE_ESC_R           (SCANCODE_ESC + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_P_R             (SCANCODE_P + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_A_R             (SCANCODE_A + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_S_R             (SCANCODE_S + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_D_R             (SCANCODE_D + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_X_R             (SCANCODE_X + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_C_R             (SCANCODE_C + SCANCODE_RELEASE_FLAG)
 
-#define SCANCODE_ARROW_UP_R      200
-#define SCANCODE_ARROW_LEFT_R    203
-#define SCANCODE_ARROW_RIGHT_R   205
-#define SCANCODE_ARROW_DOWN_R    208
+#define SCANCODE_ARROW_UP_R      (SCANCODE_ARROW_UP + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_ARROW_LEFT_R    (SCANCODE_ARROW_LEFT + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_ARROW_RIGHT_R   (SCANCODE_ARROW_RIGHT + SCANCODE_RELEASE_FLAG)
+#define SCANCODE_ARROW_DOWN_R    (SCANCODE_ARROW_DOWN + SCANCODE_RELEASE_FLAG)
 
 bool keyboard_initialize();
 void keyboard_deinitialize();
 
-int keyboard_get_key();
+bool keyboard_get_key_status(int key, int* key_count);
 
 #endif // KEYBOARD_H_

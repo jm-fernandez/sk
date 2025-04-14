@@ -12,6 +12,8 @@
 typedef struct pause_state_t_
 {
   state_t state;
+  int pause_count;
+  int exit_count;
   state_t* previous_state;
   palette_t previous_palette;
   palette_t new_palette;
@@ -23,6 +25,9 @@ static void pause_start(state_t* state)
   if(pause_state)
   {
     int i = 0;
+
+    keyboard_get_key_status(KEY_CONFIG_PAUSE, &pause_state->pause_count);
+    keyboard_get_key_status(KEY_CONFIG_EXIT, &pause_state->exit_count);
 
     pause_state->previous_state = state_ctrl_get_current();
     pause_state->previous_palette = *render_get_palette();
@@ -62,13 +67,18 @@ static void pause_resume(state_t* state)
 static bool pause_step(state_t* state)
 {
   bool result = true;
-  const int key = keyboard_get_key();
-  if(key == KEY_CONFIG_PAUSE)
+
+  int current_pause_count = 0;
+  int current_exit_count = 0;
+  pause_state_t* pause_state = (pause_state_t*)state;
+  const bool pause = keyboard_get_key_status(KEY_CONFIG_PAUSE, &current_pause_count);
+  const bool exit = keyboard_get_key_status(KEY_CONFIG_EXIT, &current_exit_count);
+  if(pause && current_pause_count != pause_state->pause_count)
   {
     pause_state_t* pause_state = (pause_state_t*)state;
     state_ctrl_resume_by_pointer(pause_state->previous_state);
   }
-  else if(key == KEY_CONFIG_EXIT)
+  else if(exit && current_exit_count != pause_state->exit_count)
   {
     result = false;
   }

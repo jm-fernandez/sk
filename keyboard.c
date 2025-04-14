@@ -9,35 +9,46 @@
 #include "keyconfig.h"
 
 #define KEYBOARD_INTERRUPT                  9
-#define KEY_BUFFER_LEN						32
 
 static void (__interrupt __far * original_keyboard_handler) () = NULL;
 
-static volatile int key_events[KEY_BUFFER_LEN] = {0};
-static volatile int last_key = 0;
-static volatile int front_pos = 0;
-static volatile int back_pos = 0;
+static bool static_key_status[KEY_CONFIG_COUNT] = {false};
+static int static_key_count[KEY_CONFIG_COUNT] = {0};
 
 static void __interrupt __far keyboard_handler()
 {
-	const int local_last_key = key_config_map_key(inp(0x60));
-	const int new_back = (back_pos + 1) % KEY_BUFFER_LEN;
-	if(local_last_key != KEY_CONFIG_UNKNOWN && last_key != local_last_key && new_back != front_pos)
-	{
-		last_key = local_last_key;
-		key_events[back_pos] = local_last_key;
-		back_pos = new_back;
-	}
+	const int key = key_config_map_key(inp(0x60));
+    if(key != KEY_CONFIG_UNKNOWN)
+    {
+        const bool new_value = key >= KEY_CONFIG_COUNT ? false : true;
+        const int key_index = key >= KEY_CONFIG_COUNT ? key - KEY_CONFIG_COUNT : key;
+
+        if(static_key_status[key_index] != new_value)
+        {
+            static_key_status[key_index] = new_value;
+			if(new_value)
+			{
+				static_key_count[key_index] += 1;
+			}
+        }
+    }
 	outp(0x20,0x20);
 }
 
 bool keyboard_initialize()
 {
+	int i;
+	for(i = 0; i < KEY_CONFIG_COUNT; ++i)
+	{
+		static_key_status[i] = false;
+		static_key_count[i] = 0;
+	}
+
 	_disable();
 	original_keyboard_handler = _dos_getvect(KEYBOARD_INTERRUPT);
 	_dos_setvect(KEYBOARD_INTERRUPT, keyboard_handler);
 	_enable();
-  return true;
+  	return true;
 }
 
 void keyboard_deinitialize()
@@ -47,17 +58,16 @@ void keyboard_deinitialize()
 	_enable();
 }
 
-int keyboard_get_key()
+bool keyboard_get_key_status(int key, int* key_count)
 {
-	int key = KEY_CONFIG_NONE;
+	bool result = false;
 
 	_disable();
-	if(front_pos != back_pos)
+	result = static_key_status[key];
+	if(key_count)
 	{
-		key = key_events[front_pos];
-		front_pos = (front_pos  + 1) % KEY_BUFFER_LEN;
+		*key_count = static_key_count[key];
 	}
 	_enable();
-
-	return key;
+	return result;
 }

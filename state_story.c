@@ -55,6 +55,8 @@ static const char* story_image_file_names[] = {
 typedef struct story_state_t_
 {
   state_t state;
+  int pause_count;
+  int exit_count;
   sprite_t* black_screen;
   sprite_t* sprites[STORY_IMAGE_COUNT];
   effect_t* set_palette_effects[STORY_IMAGE_COUNT];
@@ -71,6 +73,8 @@ static void story_start(struct state_t_* state)
   story_state_t* story_state = (story_state_t*)state;
   if(story_state)
   {
+    keyboard_get_key_status(KEY_CONFIG_PAUSE, &story_state->pause_count);
+    keyboard_get_key_status(KEY_CONFIG_EXIT, &story_state->exit_count);
   	effect_start(story_state->steps[EFFECT_COUNT - 1]);
     render_show(false);
   }
@@ -85,6 +89,8 @@ static void story_stop(struct state_t_* state)
 static void story_resume(struct state_t_* state)
 {
   story_state_t* story_state = (story_state_t*)state;
+  keyboard_get_key_status(KEY_CONFIG_PAUSE, &story_state->pause_count);
+  keyboard_get_key_status(KEY_CONFIG_EXIT, &story_state->exit_count);
   effect_resume(story_state->steps[EFFECT_COUNT - 1]);
 }
 
@@ -93,12 +99,16 @@ static bool story_step(struct state_t_* state)
   story_state_t* story_state = (story_state_t*)state;
   if(story_state)
   {
-    const int key = keyboard_get_key();
-    if(key == KEY_CONFIG_PAUSE)
+    int current_pause_count = 0;
+    int current_exit_count = 0;
+    const bool pause = keyboard_get_key_status(KEY_CONFIG_PAUSE, &current_pause_count);
+    const bool exit = keyboard_get_key_status(KEY_CONFIG_EXIT, &current_exit_count);
+
+    if(pause && current_pause_count != story_state->pause_count)
     {
       state_ctrl_set(game_state_pause);
     }
-    else if(key == KEY_CONFIG_EXIT)
+    else if(exit && current_exit_count != story_state->exit_count)
     {
       state_ctrl_set(game_state_fight);
     }

@@ -4,6 +4,7 @@
 #include "sprite.h"
 #include "stdbool.h"
 #include "util.h"
+#include "player_input.h"
 
 #define POSE_STANDING_1      0
 #define POSE_STANDING_2      1
@@ -123,17 +124,6 @@
 #define STATUS_WIN             31
 #define STATUS_COUNT           32
 
-#define PLAYER_INPUT_UP                 0
-#define PLAYER_INPUT_RIGHT              1
-#define PLAYER_INPUT_LEFT               2
-#define PLAYER_INPUT_DOWN               3
-#define PLAYER_INPUT_DEFENSE            4
-#define PLAYER_INPUT_LOW_PUNCH          5
-#define PLAYER_INPUT_HIGH_PUNCH         6
-#define PLAYER_INPUT_LOW_KICK           7
-#define PLAYER_INPUT_HIGH_KICK          8
-#define PLAYER_INPUT_COUNT              9
-
 #define PLAYER_POSE_MAX_BOXES           4
 
 typedef struct fight_context_t_
@@ -160,39 +150,13 @@ typedef struct player_pose_t_
     square_t hit_boxes[PLAYER_POSE_MAX_BOXES];
 }player_pose_t;
 
-typedef struct player_input_t_
-{
-    bool keys[PLAYER_INPUT_COUNT];
-} player_input_t;
-
-static void player_input_set_input(player_input_t* input, const player_input_t* other)
-{
-    *input = *other;
-}
-
-static void player_input_press_key(player_input_t* input, int key)
-{
-    input->keys[key] = true;
-}
-
-static void player_input_release_key(player_input_t* input, int key)
-{
-    input->keys[key] = false;
-}
-
-static bool player_input_is_key_pressed(const player_input_t* input, int key)
-{
-    return input->keys[key];
-}
-
-void player_input_clear_input(player_input_t* input);
 
 typedef struct player_t_
 {
   int x_pos;
   int y_pos;
   bool flipped;
-  player_input_t input;
+  player_input_t* input;
   player_advance_t advance;
   player_pose_t poses[POSE_COUNT];
   player_pose_t* current_pose;
@@ -216,34 +180,19 @@ player_t* player_create(const char* player_name);
 
 void player_set_pose(player_t* player, player_pose_t* pose, player_pose_alignment_t alignment);
 
-static void player_set_input(player_t* player, const player_input_t* input)
+static void player_set_input(player_t* player, player_input_t* input)
 {
-    player_input_set_input(&player->input, input);
-}
-
-static void player_clear_input(player_t* player)
-{
-    player_input_clear_input(&player->input);
-}
-
-static void player_press_key(player_t* player, int key)
-{
-    player_input_press_key(&player->input, key);
-}
-
-static void player_release_key(player_t* player, int key)
-{
-    player_input_release_key(&player->input, key);
+    player->input = input;
 }
 
 static bool player_is_key_pressed(const player_t* player, int key)
 {
-    return player_input_is_key_pressed(&player->input, key);
-}
-
-static player_input_t* player_input(player_t* player)
-{
-    return &player->input;
+    bool result = false;
+    if(player->input)
+    {
+        result = player_input_is_key_pressed(player->input, key);
+    }
+    return result;
 }
 
 static sprite_t* player_get_sprite(const player_t* player)

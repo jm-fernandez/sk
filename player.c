@@ -91,15 +91,6 @@ static const char* pose_names [] = {
   "win",
 };
 
-void player_input_clear_input(player_input_t* input)
-{
-  int i = 0;
-  for(;i < PLAYER_INPUT_COUNT; ++i)
-  {
-    input->keys[i] = false;
-  }
-}
-
 static bool load_pose(player_pose_t* pose, const char* player_name, const char* pose_name)
 {
   bool result = false;

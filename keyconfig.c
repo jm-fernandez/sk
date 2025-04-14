@@ -11,7 +11,6 @@ void key_config_init()
         configured[i] = KEY_CONFIG_UNKNOWN;
     }
 
-    configured[SCANCODE_NONE] = KEY_CONFIG_NONE;
     configured[SCANCODE_ESC] = KEY_CONFIG_EXIT;
     configured[SCANCODE_ESC_R] = KEY_CONFIG_EXIT_END;
     configured[SCANCODE_P] = KEY_CONFIG_PAUSE;
